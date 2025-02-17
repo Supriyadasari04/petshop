@@ -1,0 +1,394 @@
+import streamlit as st
+import sqlite3
+
+# Function to authenticate Admin
+def authenticate_admin(admin_id, password):
+    conn = sqlite3.connect('petshop.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM admins WHERE admin_id = ? AND password = ?', (admin_id, password))
+    admin = cursor.fetchone()
+    conn.close()
+    return admin
+
+# Function to authenticate Customer
+def authenticate_customer(username, password):
+    conn = sqlite3.connect('petshop.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM customers WHERE username = ? AND password = ?', (username, password))
+    customer = cursor.fetchone()
+    conn.close()
+    return customer
+
+# Function to register a new customer
+def register_customer(username, password, name, email):
+    conn = sqlite3.connect('petshop.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO customers (username, password, name, email) VALUES (?, ?, ?, ?)', (username, password, name, email))
+    conn.commit()
+    conn.close()
+
+# Set page title and icon
+st.set_page_config(page_title="Pet Shop", page_icon="🐾", layout="centered")
+
+# Title and description
+st.title("🐶 Welcome to Paws & Claws Pet Shop 🐱")
+st.write("Your one-stop destination for pet adoption, food, grooming, and veterinary services.")
+
+# Quote Section
+st.markdown(
+    """
+    *"Animals are such agreeable friends—they ask no questions; they pass no criticisms."*  
+    — George Eliot  
+    """
+)
+
+# Divider
+st.markdown("---")
+
+# Buttons for Login and Register
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔑 Login", use_container_width=True):
+        st.session_state.page = "login"
+        st.rerun()
+
+with col2:
+    if st.button("📝 Register", use_container_width=True):
+        st.session_state.page = "register"
+        st.rerun()
+
+# Check the page in session_state and render content accordingly
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+if st.session_state.page == "login":
+    # Display login page content
+    st.header("Login Page")
+    st.write("Please choose your user type and enter your login details:")
+
+    # Option to select user type (Admin or Customer)
+    user_type = st.radio("Select user type:", ["Admin", "Customer"])
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if user_type == "Admin":
+        admin_id = st.text_input("Admin ID")  # Admin ID input for admin login
+
+    if st.button("Login"):
+        # Validate login based on user type
+        if user_type == "Admin":
+            admin = authenticate_admin(admin_id, password)
+            if admin:
+                st.success("Logged in as Admin!")
+                st.session_state.page = "admin_dashboard"
+                st.session_state.user_type = "admin"
+                st.session_state.username = admin_id
+                st.rerun()
+            else:
+                st.error("Invalid Admin credentials. Please try again.")
+                
+        elif user_type == "Customer":
+            customer = authenticate_customer(username, password)
+            if customer:
+                st.success("Logged in as Customer!")
+                st.session_state.page = "customer_home"  # Directing to customer home after login
+                st.session_state.user_type = "customer"
+                st.session_state.username = username
+                st.rerun()
+            else:
+                st.error("Invalid Customer credentials. Please try again.")
+                
+elif st.session_state.page == "register":
+    # Display register page content
+    st.header("Register Page")
+    st.write("Please fill in the details to register:")
+
+    # Registration form for customers
+    name = st.text_input("Name")
+    email = st.text_input("Email")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Register"):
+        # Register the new customer
+        register_customer(username, password, name, email)
+        st.success("Registration successful! Please login now.")
+        st.session_state.page = "login"
+        st.rerun()
+
+elif st.session_state.page == "admin_dashboard":
+    # If admin is logged in, display the admin homepage
+    import admin_home  # Import the admin homepage file
+    admin_home.admin_home()
+
+elif st.session_state.page == "customer_home":
+    # If customer is logged in, display the customer homepage
+    import home as customer_home  # Import the customer homepage file
+    customer_home.show_customer_home()
+
+else:
+    # Default home page when not logged in
+    st.write("Welcome to our pet shop! Please choose an action.")
+
+--------------------------------------------abovev main.py
+
+
+
+import streamlit as st
+
+# Function to display the Admin Dashboard
+def admin_home():
+    st.title("Admin Dashboard - Paws & Claws Pet Shop")
+    st.write("Welcome to the Admin dashboard! Choose an option to manage the system.")
+    
+    # Buttons for each section
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("📊 Dashboard", use_container_width=True):
+            st.session_state.page = "admin_dashboard"
+            st.rerun()
+
+    with col2:
+        if st.button("👤 Manage Users", use_container_width=True):
+            st.session_state.page = "manage_users"
+            st.rerun()
+
+    with col1:
+        if st.button("🛒 Manage Inventory", use_container_width=True):
+            st.session_state.page = "manage_inventory"
+            st.rerun()
+
+    with col2:
+        if st.button("📋 View Orders", use_container_width=True):
+            st.session_state.page = "view_orders"
+            st.rerun()
+
+    with col1:
+        if st.button("🧑‍⚕️ Salon & Vet Appointments", use_container_width=True):
+            st.session_state.page = "salon_vet_appointments"
+            st.rerun()
+
+
+------------------------------------------above admin_home.py
+
+import streamlit as st
+
+# Function to render the customer home page
+def show_customer_home():
+    # Title and description
+    st.title("🐶 Welcome to Paws & Claws Pet Shop 🐱")
+    st.write("Choose a service to explore:")
+
+    # Buttons for different features
+    col1, col2 = st.columns(2)
+
+    # Button for Pet Adoption Center
+    with col1:
+        if st.button("🦸 Pet Adoption Center", use_container_width=True):
+            st.session_state.page = "adoption_center"  # Set the page to "adoption_center"
+            st.rerun()  # Rerun the app to redirect to the Pet Adoption Center page
+
+    # Button for Shop (Pet Food & Accessories)
+    with col2:
+        if st.button("🛒 Shop (Pet Food & Accessories)", use_container_width=True):
+            st.session_state.page = "shop"  # Set the page to "shop"
+            st.rerun()  # Rerun the app to redirect to the Shop page
+
+    # Button for Pet Salon & Grooming
+    with col1:
+        if st.button("💇‍♀️ Pet Salon & Grooming", use_container_width=True):
+            st.session_state.page = "pet_salon"  # Set the page to "pet_salon"
+            st.rerun()  # Rerun the app to redirect to the Pet Salon page
+
+    # Button for Veterinary Consultation
+    with col2:
+        if st.button("🐾 Veterinary Consultation", use_container_width=True):
+            st.session_state.page = "vet_consultation"  # Set the page to "vet_consultation"
+            st.rerun()  # Rerun the app to redirect to the Veterinary Consultation page
+
+    # Button for My Orders
+    with col1:
+        if st.button("📦 My Orders", use_container_width=True):
+            st.session_state.page = "my_orders"  # Set the page to "my_orders"
+            st.rerun()  # Rerun the app to redirect to the My Orders page
+
+    # Button for Profile Page
+    with col2:
+        if st.button("👤 Profile Page", use_container_width=True):
+            st.session_state.page = "profile"  # Set the page to "profile"
+            st.rerun()  # Rerun the app to redirect to the Profile page
+
+# Check the page in session_state and render content accordingly
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+if st.session_state.page == "adoption_center":
+    # Redirect to Pet Adoption Center page
+    import adoption_center  # Import the Pet Adoption Center page
+    adoption_center.show_adoption_center()
+
+elif st.session_state.page == "shop":
+    # Redirect to Shop page
+    import shop  # Import the Shop page
+    shop.show_shop()
+
+elif st.session_state.page == "pet_salon":
+    # Redirect to Pet Salon page
+    import pet_salon  # Import the Pet Salon page
+    pet_salon.show_salon()
+
+elif st.session_state.page == "vet_consultation":
+    # Redirect to Veterinary Consultation page
+    import vet_consultation  # Import the Vet Consultation page
+    vet_consultation.show_vet_consultation()
+
+elif st.session_state.page == "my_orders":
+    # Redirect to My Orders page
+    import my_orders  # Import the My Orders page
+    my_orders.show_my_orders()
+
+elif st.session_state.page == "profile":
+    # Redirect to Profile page
+    import profile  # Import the Profile page
+    profile.show_profile()
+
+else:
+    # Default page when not logged in
+    show_customer_home()
+
+--------------------------------------------above home.py
+
+import streamlit as st
+
+def show_adoption_center():
+    st.title("🦸 Pet Adoption Center")
+    st.write("Explore available pets for adoption!")
+
+    # Example pet list (can be dynamic based on database)
+    pets = [
+        {"name": "Max", "age": "2 years", "breed": "Golden Retriever", "status": "Available"},
+        {"name": "Bella", "age": "1 year", "breed": "Labrador", "status": "Adopted"},
+        {"name": "Charlie", "age": "3 years", "breed": "Poodle", "status": "Available"},
+    ]
+
+    # Display list of pets
+    for pet in pets:
+        st.subheader(pet["name"])
+        st.write(f"Age: {pet['age']}, Breed: {pet['breed']}, Status: {pet['status']}")
+        if pet["status"] == "Available":
+            if st.button(f"Adopt {pet['name']}"):
+                st.success(f"Successfully requested to adopt {pet['name']}!")
+        st.markdown("---")
+-------------------------------------------above adoption.py
+import streamlit as st
+
+def show_shop():
+    st.title("🛒 Shop (Pet Food & Accessories)")
+    st.write("Browse our selection of pet food and accessories!")
+
+    # Example product list (can be dynamic based on database)
+    products = [
+        {"name": "Premium Dog Food", "price": "$30", "description": "Healthy dog food for all breeds."},
+        {"name": "Cat Toy", "price": "$10", "description": "Interactive toy for your cat."},
+        {"name": "Dog Collar", "price": "$15", "description": "Adjustable collar for your dog."},
+    ]
+
+    # Display products
+    for product in products:
+        st.subheader(product["name"])
+        st.write(f"Price: {product['price']}")
+        st.write(product["description"])
+        if st.button(f"Add {product['name']} to Cart"):
+            st.success(f"{product['name']} added to cart!")
+        st.markdown("---")
+----------------------------------------------above shop.py
+import streamlit as st
+
+def show_salon():
+    st.title("💇‍♀️ Pet Salon & Grooming")
+    st.write("Book a grooming appointment for your pet!")
+
+    # Example service options (can be dynamic based on offerings)
+    services = [
+        {"service": "Full Grooming", "price": "$50", "description": "Complete grooming package."},
+        {"service": "Nail Trim", "price": "$10", "description": "Trim your pet's nails."},
+        {"service": "Bathing", "price": "$20", "description": "Full body bath for your pet."},
+    ]
+
+    # Display services
+    for service in services:
+        st.subheader(service["service"])
+        st.write(f"Price: {service['price']}")
+        st.write(service["description"])
+        if st.button(f"Book {service['service']}"):
+            st.success(f"{service['service']} booked successfully!")
+        st.markdown("---")
+-------------------------------------------------above pet_salon.py
+import streamlit as st
+
+def show_vet_consultation():
+    st.title("🐾 Veterinary Consultation")
+    st.write("Book an appointment with one of our experienced veterinarians!")
+
+    # Example list of available vets (can be dynamic based on database)
+    vets = [
+        {"name": "Dr. Sarah", "specialization": "General Medicine", "availability": "9:00 AM - 12:00 PM"},
+        {"name": "Dr. John", "specialization": "Surgery", "availability": "1:00 PM - 4:00 PM"},
+    ]
+
+    # Display vet list
+    for vet in vets:
+        st.subheader(vet["name"])
+        st.write(f"Specialization: {vet['specialization']}")
+        st.write(f"Availability: {vet['availability']}")
+        if st.button(f"Book Appointment with {vet['name']}"):
+            st.success(f"Appointment with {vet['name']} booked successfully!")
+        st.markdown("---")
+---------------------------------------------------above vet_consultation.py
+import streamlit as st
+
+def show_my_orders():
+    st.title("📦 My Orders")
+    st.write("View your orders for pet food, grooming, and adoption requests.")
+
+    # Example order list (can be dynamic based on database)
+    orders = [
+        {"order_id": "12345", "status": "Shipped", "items": ["Premium Dog Food", "Dog Collar"]},
+        {"order_id": "12346", "status": "Delivered", "items": ["Cat Toy", "Full Grooming"]},
+    ]
+
+    # Display orders
+    for order in orders:
+        st.subheader(f"Order ID: {order['order_id']}")
+        st.write(f"Status: {order['status']}")
+        st.write("Items:")
+        for item in order["items"]:
+            st.write(f"- {item}")
+        st.markdown("---")
+
+---------------------------------------------------above my_orders.py
+import streamlit as st
+
+def show_profile():
+    st.title("👤 Profile Page")
+    st.write("View and update your profile information.")
+
+    # Example profile info (can be dynamic based on user session data)
+    user_info = {
+        "name": "John Doe",
+        "email": "johndoe@example.com",
+        "username": "johndoe123"
+    }
+
+    st.subheader("Profile Information")
+    st.write(f"Name: {user_info['name']}")
+    st.write(f"Email: {user_info['email']}")
+    st.write(f"Username: {user_info['username']}")
+
+    # Option to update profile (for now, just a placeholder)
+    if st.button("Update Profile"):
+        st.success("Profile updated successfully!")
+-----------------------------------------------------above profile.py
